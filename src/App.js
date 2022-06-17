@@ -1,21 +1,65 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
+import { useState, useEffect } from 'react';
+import Answer from './Answer';
 import './App.css';
+import { useSelector } from 'react-redux';
+import { addData } from './weatherSlice';
+import cities from './cities.json';
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
+const App = () => {
+  const [city, setCity] = useState('Colombo');
+  const [temp, setTemp] = useState(0);
+
+  const answers = useSelector((state) => state.weather.answers);
+
+  useEffect(() => {
+    setCity(cities[Math.floor(Math.random() * cities.length)].name);
+  }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    console.log('do something');
+    fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=9cff733aee57cb05b63dd4f731c46bc4`
+    )
+      .then((res) => res.json())
+      .then((result) => {
+        console.log(result);
+        addData({ city, temp });
+      });
+  };
+
+  return (
+    <div className="App">
+      <div style={{ width: '100%' }}>
+        <form onSubmit={handleSubmit}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+            <h1>{city}</h1>
+            <input value={temp} onChange={setTemp} placeholder="your guess text box"></input>
+            <button type="submit">Check</button>
+          </div>
+        </form>
+        <hr />
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+          {Object.entries(answers).map(([key, val]) => (
+            <Answer key={key} city={key} temp={val} color="red" />
+          ))}
+        </div>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default App;

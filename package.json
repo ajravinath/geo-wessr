@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@reduxjs/toolkit": "^1.8.2",
     "create-react-app": "^1.4.3",
+    "eslint": "^7.32.0",
     "prop-types": "^15.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-redux": "^8.0.2",
     "react-scripts": "^4.0.3",
     "save": "^2.3.1"
   },
@@ -18,8 +21,13 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "enzyme": "^3.11.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-react": "^7.30.0",
     "expect": "^21.2.1",
     "jest-junit": "^3.3.0",
+    "json-loader": "^0.5.7",
+    "prettier": "^2.7.1",
     "react-test-renderer": "^17.0.2"
   },
   "browserslist": {
