@@ -7,7 +7,7 @@ import cities from './cities.json';
 
 const App = () => {
   const [city, setCity] = useState('Colombo');
-  const [temp, setTemp] = useState(0);
+  const [temp, setTemp] = useState('');
 
   const answers = useSelector((state) => state.weather.answers);
 
@@ -41,7 +41,10 @@ const App = () => {
               justifyContent: 'center'
             }}>
             <h1>{city}</h1>
-            <input value={temp} onChange={setTemp} placeholder="your guess text box"></input>
+            <input
+              value={temp}
+              onChange={(e) => setTemp(e.target.value)}
+              placeholder="your guess text box"></input>
             <button type="submit">Check</button>
           </div>
         </form>
