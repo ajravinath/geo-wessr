@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import Answer from './Answer';
 import './App.css';
-import { useSelector } from 'react-redux';
-import { addData } from './weatherSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { addData, addAnswer } from './weatherSlice';
 import cities from './cities.json';
 
 const App = () => {
   const [city, setCity] = useState('Colombo');
   const [temp, setTemp] = useState('');
+  const dispatch = useDispatch();
 
   const answers = useSelector((state) => state.weather.answers);
 
@@ -17,7 +18,7 @@ const App = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    dispatch(addAnswer({ city, temp: temp }));
     console.log('do something');
     fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=9cff733aee57cb05b63dd4f731c46bc4`
@@ -25,7 +26,7 @@ const App = () => {
       .then((res) => res.json())
       .then((result) => {
         console.log(result);
-        addData({ city, temp });
+        dispatch(addData({ city, temp: result.main.temp }));
       });
   };
 
@@ -57,7 +58,7 @@ const App = () => {
             justifyContent: 'center'
           }}>
           {Object.entries(answers).map(([key, val]) => (
-            <Answer key={key} city={key} temp={val} color="red" />
+            <Answer key={key} city={key} temp={val} />
           ))}
         </div>
       </div>
