@@ -1,13 +1,21 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { markCorrect } from './weatherSlice';
 
-const Answer = ({ city, temp }) => {
-  const correctTemp = useSelector((state) => state.weather.data)[city];
-  console.log(city, temp);
-  const isCorrect = Math.abs(Number(temp) - Number(correctTemp)) < 5;
+const Answer = ({ answer }) => {
+  const dispatch = useDispatch();
+  const correctTemp = useSelector((state) => state.weather.data)[answer.city];
+  console.log(answer);
+
+  const isCorrect = Math.abs(Number(answer.temp) - Number(correctTemp)) < 5;
+
+  useEffect(() => {
+    dispatch(markCorrect({ city: answer.city, correct: isCorrect }));
+  }, [answer.city, isCorrect]);
+
   return (
     <div style={{ color: isCorrect ? 'green' : 'red' }}>
-      {temp}
+      {answer.temp}
       <div>was {correctTemp}</div>
     </div>
   );
