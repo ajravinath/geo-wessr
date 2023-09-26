@@ -36,7 +36,7 @@ const App = () => {
     dispatch(addAnswer({ city, temp: temp, correct: false }));
     console.log('do something');
     fetch(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=9cff733aee57cb05b63dd4f731c46bc4`
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.REACT_APP_WEATHER_API_KEY}}`
     )
       .then((res) => res.json())
       .then((result) => {
