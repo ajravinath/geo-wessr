@@ -1,0 +1,18 @@
+{
+  "files": [],
+  "compilerOptions": {
+    "resolveJsonModule": true
+  },
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.vitest.json"
+    }
+  ],
+  "lib": ["DOM"]
+}
