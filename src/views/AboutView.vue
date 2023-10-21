@@ -29,6 +29,7 @@ import {
   StandardMaterial,
   Texture
 } from 'troisjs'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 type CityTemp = Pick<AnswerType, 'city' | 'temp'>
 
@@ -38,11 +39,6 @@ const validateAnswer =
   (correctAnswer: string, givenAnswer: string): AnswerResult => {
     switch (questionType) {
       case QuestionType.Temperature:
-        console.log(
-          correctAnswer,
-          givenAnswer,
-          Math.abs(parseInt(correctAnswer) - parseInt(givenAnswer))
-        )
         return Math.abs(parseInt(correctAnswer) - parseInt(givenAnswer)) < 3
           ? AnswerResult.Correct
           : AnswerResult.Wrong
@@ -62,6 +58,8 @@ const error = ref('')
 const renderer: Ref<Nullable<typeof Renderer>> = ref(null)
 const sphere: Ref<Nullable<typeof Sphere>> = ref(null)
 
+const isLargeScreen = useMediaQuery('(min-width: 1024px)')
+
 const answerList = computed(() => {
   if (answers.value.length && answers.value.length < 6) {
     return [...answers.value, ...Array.from(Array(6 - answers.value.length))]
@@ -79,26 +77,21 @@ onRenderTriggered((event) => {
 })
 
 watchEffect(() => {
-  console.log('city', city.value, 'temp', temperature.value)
   if (city.value == null && temperature.value == '' && answers.value.length < 6) {
     const selectedCity = cities[Math.floor(Math.random() * cities.length)] as City
     city.value = selectedCity
-    // alert(lat + lng)
-    console.log('latlng:X', parseFloat(selectedCity.lat), parseFloat(selectedCity.lng))
     setLatLng(parseFloat(selectedCity.lat), parseFloat(selectedCity.lng))
   }
 })
 
-watch(cityTemperatures, (newValue, oldValue) => {
-  console.log('watch', newValue, oldValue)
-})
-
 onMounted(() => {
-  renderer?.value?.onBeforeRender(() => {
-    if (sphere?.value) {
-      sphere.value.mesh.rotation.y += 0.002
-    }
-  })
+  if (isLargeScreen.value) {
+    renderer?.value?.onBeforeRender(() => {
+      if (sphere?.value) {
+        sphere.value.mesh.rotation.y += 0.002
+      }
+    })
+  }
 })
 
 const handleReplay = () => {
@@ -118,7 +111,6 @@ const handleSubmit = async (e: Event) => {
       correct: AnswerResult.Unknown
     }
     const existingCity = cityTemperatures.value.find((temp) => temp.city === city.value)
-    console.log('existingCity', existingCity)
     if (existingCity) {
       answers.value.push({
         ...answer,
@@ -133,9 +125,7 @@ const handleSubmit = async (e: Event) => {
       )
         .then((res) => res.json())
         .then((result) => {
-          console.log('tem', result.main.temp, temperature)
           cityTemperatures.value.push({ city: city.value as City, temp: result.main.temp })
-          console.log('dddd', temperature.value)
           answers.value.push({
             ...answer,
             correct: validateTemperature(result.main.temp, temperature.value),
@@ -143,7 +133,7 @@ const handleSubmit = async (e: Event) => {
           })
         })
         .catch((err) => {
-          console.log('error', error)
+          console.warn('error', error)
           error.value = err.message
         })
     }
@@ -189,6 +179,7 @@ const handleSubmit = async (e: Event) => {
     </form>
   </div>
   <Renderer
+    v-if="isLargeScreen"
     ref="renderer"
     resize
     antialias
@@ -226,9 +217,6 @@ const handleSubmit = async (e: Event) => {
   overflow: hidden;
   z-index: -10;
   position: absolute;
-  @media (max-width: 1024px) {
-    display: none;
-  }
 }
 </style>
 

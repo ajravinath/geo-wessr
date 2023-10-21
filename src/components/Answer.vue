@@ -18,7 +18,6 @@ defineProps({
       }"
     >
       <span class="answer">{{ answer.temp }}&deg;C</span>
-      {{ console.log(answer.correct) }}
       <div class="actual">
         <div
           v-if="answer.correct === AnswerResult.Correct || answer.correct === AnswerResult.Wrong"
