@@ -1,160 +1,137 @@
 <script setup lang="ts">
-import cities from '@/assets/data/cities.json'
-import Answer from '@/components/Answer.vue'
-import WonLost from '@/components/WonLost.vue'
-import { useLocationStore } from '@/stores/counter'
-import type { Answer as AnswerType, City } from '@/types/TempTypes'
-import { AnswerResult, QuestionType } from '@/types/enums'
-import {
-  computed,
-  onMounted,
-  onRenderTracked,
-  onRenderTriggered,
-  ref,
-  watch,
-  watchEffect,
-  type Ref
-} from 'vue'
+import { validateAnswer } from '@/common/util';
+import Answer from '@/components/Answer.vue';
+import Earth3D from '@/components/Earth3D.vue';
+import WonLost from '@/components/WonLost.vue';
+import { useMediaQuery } from '@/composables/useMediaQuery';
+import { useRandomCityGeoDb, type GeoCity } from '@/composables/useRandomCityGeoDb';
+import { useLocationStore } from '@/stores/counter';
+import type { Answer as AnswerType } from '@/types/TempTypes';
+import { AnswerResult, QuestionType } from '@/types/enums';
+import type { Renderer as RendererType, Sphere as SphereType } from 'troisjs';
+import { computed, onRenderTracked, onRenderTriggered, ref, watchEffect, type Ref } from 'vue';
 
-import earthBump from '@/assets/textures/earth-bump.jpg'
-import earthSpec from '@/assets/textures/earth-spec.jpg'
-import earth from '@/assets/textures/earth.jpg'
-import {
-  AmbientLight,
-  Camera,
-  PointLight,
-  Renderer,
-  Scene,
-  Sphere,
-  StandardMaterial,
-  Texture
-} from 'troisjs'
-import { useMediaQuery } from '@/composables/useMediaQuery'
+type CityTemp = Pick<AnswerType, 'city' | 'temp'>;
 
-type CityTemp = Pick<AnswerType, 'city' | 'temp'>
+const validateTemperature = validateAnswer(QuestionType.Temperature);
 
-// FIXME: extract to utility
-const validateAnswer =
-  (questionType: QuestionType) =>
-  (correctAnswer: string, givenAnswer: string): AnswerResult => {
-    switch (questionType) {
-      case QuestionType.Temperature:
-        return Math.abs(parseInt(correctAnswer) - parseInt(givenAnswer)) < 3
-          ? AnswerResult.Correct
-          : AnswerResult.Wrong
-      default:
-        return AnswerResult.Unknown
-    }
-  }
+const temperature = ref('');
+const answers: Ref<Array<AnswerType>> = ref([]);
+const count = ref(0);
+const cityTemperatures: Ref<Array<CityTemp>> = ref([]);
+const error = ref('');
+const renderer: Ref<Nullable<typeof RendererType>> = ref(null);
+const sphere: Ref<Nullable<typeof SphereType>> = ref(null);
 
-const validateTemperature = validateAnswer(QuestionType.Temperature)
-
-const temperature = ref('')
-const city: Ref<Nullable<City>> = ref(null)
-const answers: Ref<Array<AnswerType>> = ref([])
-const count = ref(0)
-const cityTemperatures: Ref<Array<CityTemp>> = ref([])
-const error = ref('')
-const renderer: Ref<Nullable<typeof Renderer>> = ref(null)
-const sphere: Ref<Nullable<typeof Sphere>> = ref(null)
-
-const isLargeScreen = useMediaQuery('(min-width: 1024px)')
+const isLargeScreen = useMediaQuery('(min-width: 1024px)');
 
 const answerList = computed(() => {
   if (answers.value.length && answers.value.length < 6) {
-    return [...answers.value, ...Array.from(Array(6 - answers.value.length))]
+    return [...answers.value, ...Array.from(Array(6 - answers.value.length))];
   }
-  return answers.value
-})
-const { setLatLng } = useLocationStore()
+  return answers.value;
+});
+
+const { city, error: geoPlaceError, loading: geoPlaceLoading } = useRandomCityGeoDb();
+
+const { setLatLng } = useLocationStore();
 
 onRenderTracked((event) => {
-  console.log('tracked', event)
-})
+  console.log('tracked', event);
+});
 
 onRenderTriggered((event) => {
-  console.log('trigger', event)
-})
+  console.log('trigger', event);
+});
 
 watchEffect(() => {
-  if (city.value == null && temperature.value == '' && answers.value.length < 6) {
-    const selectedCity = cities[Math.floor(Math.random() * cities.length)] as City
-    city.value = selectedCity
-    setLatLng(parseFloat(selectedCity.lat), parseFloat(selectedCity.lng))
+  if (city.value && answers.value.length < 6 && temperature.value == '') {
+    setLatLng(city.value.latitude, city.value.longitude);
   }
-})
+});
 
-onMounted(() => {
+watchEffect(() => {
+  const threeRenderer = renderer.value;
+  const threeSphere = sphere.value;
   if (isLargeScreen.value) {
-    renderer?.value?.onBeforeRender(() => {
-      if (sphere?.value) {
-        sphere.value.mesh.rotation.y += 0.002
+    threeRenderer?.onBeforeRender(() => {
+      if (threeSphere) {
+        threeSphere.mesh.rotation.y += 0.002;
       }
-    })
+    });
   }
-})
+});
 
 const handleReplay = () => {
-  answers.value = []
-  city.value = null
-  temperature.value = ''
-  count.value = 0
-}
+  answers.value = [];
+  city.value = null;
+  temperature.value = '';
+  count.value = 0;
+};
 
 const handleSubmit = async (e: Event) => {
-  e.preventDefault()
-  error.value = ''
+  e.preventDefault();
+  error.value = '';
   if (city.value) {
     const answer: AnswerType = {
       city: city.value,
       temp: temperature.value,
       correct: AnswerResult.Unknown
-    }
-    const existingCity = cityTemperatures.value.find((temp) => temp.city === city.value)
+    };
+    const existingCity = cityTemperatures.value.find((temp) => temp.city === city.value);
     if (existingCity) {
       answers.value.push({
         ...answer,
         correct: validateTemperature(existingCity.temp, temperature.value),
         correctAnswer: existingCity.temp
-      })
+      });
     } else {
       await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${city.value.lat}&lon=${
-          city.value.lng
+        `https://api.openweathermap.org/data/2.5/weather?lat=${city.value.latitude}&lon=${
+          city.value.longitude
         }&units=metric&appid=${import.meta.env.VITE_OPEN_WEATHER_KEY}`
       )
         .then((res) => res.json())
         .then((result) => {
-          cityTemperatures.value.push({ city: city.value as City, temp: result.main.temp })
+          cityTemperatures.value.push({ city: city.value as GeoCity, temp: result.main.temp });
           answers.value.push({
             ...answer,
             correct: validateTemperature(result.main.temp, temperature.value),
             correctAnswer: result.main.temp
-          })
+          });
         })
         .catch((err) => {
-          console.warn('error', error)
-          error.value = err.message
-        })
+          console.warn('error', error);
+          error.value = err.message;
+        });
     }
-    city.value = null
-    temperature.value = ''
-    count.value++
+    city.value = null;
+    temperature.value = '';
+    count.value++;
   }
-}
+};
 </script>
 
 <template>
   <div class="form-container">
     <form @submit="handleSubmit">
       <TransitionGroup class="result">
-        <h1 v-if="city && answers.length < 6">{{ city.name }}</h1>
+        <h1 v-if="answers.length < 6">{{ city?.name ? city.name + ', ' + city.country : '🤔' }}</h1>
         <WonLost
           v-else
           :is-won="answers.every((answer) => answer.correct === AnswerResult.Correct)"
         />
       </TransitionGroup>
-      <label for="temp">Enter guess</label>
+      <div>
+        <label for="temp">Enter guess</label>
+        <div class="info">
+          Wdym? What do I have to do? 🤷🏻‍♀️
+          <div>
+            Enter your guess for what the temperature (&deg;C) would be in the indicated city. The
+            🗺️ could be of help, idk maybe 😉
+          </div>
+        </div>
+      </div>
       <input
         id="temp"
         name="temperature"
@@ -178,47 +155,8 @@ const handleSubmit = async (e: Event) => {
       </TransitionGroup>
     </form>
   </div>
-  <Renderer
-    v-if="isLargeScreen"
-    ref="renderer"
-    resize
-    antialias
-    class="canvas"
-    :alpha="false"
-    :orbit-ctrl="{ autoRotate: false, enableDamping: true, dampingFactor: 0.05 }"
-  >
-    <Camera :position="{ y: 0, x: 0, z: -10 }" />
-    <Scene background="#00FFFFFF">
-      <AmbientLight :intensity="0.9" />
-      <PointLight :position="{ y: 50, z: 0 }" :intensity="0.75" />
-      <PointLight color="#ff6000" :intensity="0.75" />
-      <Sphere
-        :position="{ y: -1, x: -2 }"
-        ref="sphere"
-        :radius="4.6"
-        :width-segments="200"
-        :height-segments="200"
-      >
-        <StandardMaterial :props="{ displacementScale: 0.2 }">
-          <Texture :src="earth" name="map" />
-          <Texture :src="earthBump" name="bumpMap" />
-          <Texture :src="earthSpec" name="specMap" />
-        </StandardMaterial>
-      </Sphere>
-    </Scene>
-  </Renderer>
+  <Earth3D />
 </template>
-
-<style global lang="scss">
-.canvas {
-  right: 0;
-  bottom: 0;
-  width: 600px;
-  overflow: hidden;
-  z-index: -10;
-  position: absolute;
-}
-</style>
 
 <style scoped lang="scss">
 @media (min-width: 1024px) {
@@ -248,6 +186,30 @@ form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+
+  .info {
+    width: fit-content;
+    text-decoration: underline;
+    &:hover {
+      div {
+        display: block;
+      }
+    }
+    position: relative;
+    font-size: 0.55rem;
+    div {
+      display: none;
+      color: rgb(243, 226, 194);
+      top: 130%;
+      font-size: 0.65rem;
+      padding: 0.5rem;
+      border-radius: 0.3rem;
+      background-color: rgba(47, 79, 79, 0.93);
+      position: absolute;
+      min-width: 150%;
+      max-width: 200%;
+    }
+  }
 
   h1,
   span,

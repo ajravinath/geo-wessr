@@ -1,15 +1,16 @@
-import { AnswerResult } from '@/types/enums'
+import type { GeoCity } from '@/composables/useRandomCityGeoDb';
+import { AnswerResult } from '@/types/enums';
 
 export type City = {
-  country: string
-  name: string
-  lat: string
-  lng: string
-}
+  country: string;
+  name: string;
+  lat: string;
+  lng: string;
+};
 
 export interface Answer {
-  city: City
-  temp: string
-  correct: AnswerResult
-  correctAnswer?: string
+  city: GeoCity;
+  temp: string;
+  correct: AnswerResult;
+  correctAnswer?: string;
 }

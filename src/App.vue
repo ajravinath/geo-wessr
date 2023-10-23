@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
-import Header from './components/Header.vue'
-import MapBox from './components/MapBox.vue'
+import { RouterView } from 'vue-router';
+import Header from './components/Header.vue';
+import MapBox from './components/MapBox.vue';
 </script>
 
 <template>
@@ -77,7 +77,6 @@ main {
       bottom: 0;
       background-color: rgba(0, 0, 0, 0.5);
       z-index: 2;
-      cursor: pointer;
       @media (max-width: 1024px) {
         display: none;
       }
