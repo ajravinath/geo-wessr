@@ -1,4 +1,3 @@
-import process from 'process';
 import { type Ref, ref, watchEffect, onMounted } from 'vue';
 
 export interface GeoCity {
