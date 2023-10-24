@@ -1,3 +1,4 @@
+import process from 'process';
 import { type Ref, ref, watchEffect, onMounted } from 'vue';
 
 export interface GeoCity {
@@ -25,7 +26,7 @@ interface GeoCityResponse {
 }
 
 const getGeoDbPlacesUrl = (offset = 0) =>
-  `http://geodb-free-service.wirefreethought.com/v1/geo/places?hateoasMode=false&limit=1&offset=${offset}`;
+  `${import.meta.env.VITE_GEO_DB_URL}/v1/geo/places?hateoasMode=false&limit=1&offset=${offset}`;
 
 export function useRandomCityGeoDb() {
   const city: Ref<Nullable<GeoCity>> = ref(null);
